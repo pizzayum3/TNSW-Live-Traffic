@@ -16,7 +16,13 @@ if (missing.length) {
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  realtime: {
+    params: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+    },
+  },
+});
 const discord = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 const LOGO_PATH = path.join(__dirname, 'assets', 'logo.png');
