@@ -79,22 +79,27 @@ export async function handleInsert(incident) {
 }
 
 export async function handleUpdate(incident) {
-  const mapping = await getMapping(incident.id);
-  if (!mapping) {
-    // We don't have a message for this one yet (e.g. bot was offline when it was created) — post fresh.
-    await handleInsert(incident);
+    const existing = await getMapping(incident.id);
+
+  if (existing) {
+    console.log(
+      `Incident ${incident.id} already has a Discord message. Skipping duplicate.`
+    );
     return;
   }
-  const embed = buildEmbed(incident, { logoUrl: 'attachment://logo.png', bannerUrl: 'attachment://banner.png' });
-  try {
-    const channel = await discord.channels.fetch(mapping.channel_id);
-    const msg = await channel.messages.fetch(mapping.message_id);
-    await msg.edit({ embeds: [embed] });
-  } catch (err) {
-    console.error(`Could not edit message ${mapping.message_id}, posting a new one instead:`, err.message);
-    await handleInsert(incident);
-  }
-}
+
+  const channel = await discord.channels.fetch(DISCORD_CHANNEL_ID);
+
+  const embed = buildEmbed(incident, {
+    logoUrl: 'attachment://logo.png',
+    bannerUrl: 'attachment://banner.png',
+  });
+
+  const msg = await channel.send({
+    embeds: [embed],
+    files: attachments(),
+  });
+
 
 export async function handleDelete(incidentId) {
   const mapping = await getMapping(incidentId);
