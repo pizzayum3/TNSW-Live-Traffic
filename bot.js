@@ -79,19 +79,33 @@ export async function handleInsert(incident) {
 }
 
 export async function handleUpdate(incident) {
+  // If the incident has ended, delete its Discord message
+  if (incident.status === 'Ended') {
+    await handleDelete(incident.id);
+    return;
+  }
+
   const mapping = await getMapping(incident.id);
   if (!mapping) {
-    // We don't have a message for this one yet (e.g. bot was offline when it was created) — post fresh.
+    // We don't have a message for this one yet — post fresh.
     await handleInsert(incident);
     return;
   }
-  const embed = buildEmbed(incident, { logoUrl: 'attachment://logo.png', bannerUrl: 'attachment://banner.png' });
+
+  const embed = buildEmbed(incident, {
+    logoUrl: 'attachment://logo.png',
+    bannerUrl: 'attachment://banner.png',
+  });
+
   try {
     const channel = await discord.channels.fetch(mapping.channel_id);
     const msg = await channel.messages.fetch(mapping.message_id);
     await msg.edit({ embeds: [embed] });
   } catch (err) {
-    console.error(`Could not edit message ${mapping.message_id}, posting a new one instead:`, err.message);
+    console.error(
+      `Could not edit message ${mapping.message_id}, posting a new one instead:`,
+      err.message
+    );
     await handleInsert(incident);
   }
 }
