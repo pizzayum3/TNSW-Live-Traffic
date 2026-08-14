@@ -31,7 +31,26 @@ const BANNER_PATH = path.join(__dirname, 'banner.png');
 const attachments = () => [
   new AttachmentBuilder(LOGO_PATH, { name: 'logo.png' }),
   new AttachmentBuilder(BANNER_PATH, { name: 'banner.png' }),
-@@ -53,64 +54,82 @@
+];
+
+async function getMapping(incidentId) {
+  const { data, error } = await supabase
+    .from('discord_messages')
+    .select('*')
+    .eq('incident_id', incidentId)
+    .maybeSingle();
+  if (error) console.error('getMapping error:', error.message);
+  return data || null;
+}
+async function saveMapping(incidentId, channelId, messageId) {
+  const { error } = await supabase
+    .from('discord_messages')
+    .upsert({ incident_id: incidentId, channel_id: channelId, message_id: messageId });
+  if (error) console.error('saveMapping error:', error.message);
+}
+async function clearMapping(incidentId) {
+  const { error } = await supabase.from('discord_messages').delete().eq('incident_id', incidentId);
+  if (error) console.error('clearMapping error:', error.message);
 }
 
 export async function handleInsert(incident) {
@@ -60,6 +79,13 @@ export async function handleInsert(incident) {
 }
 
 export async function handleUpdate(incident) {
+  // NEW: once an incident is marked ended, remove its message instead of editing it,
+  // so the channel doesn't fill up with resolved incidents.
+  if (incident.status === 'resolved') {
+    await handleDelete(incident.id);
+    return;
+  }
+
   const mapping = await getMapping(incident.id);
   if (!mapping) {
     // We don't have a message for this one yet (e.g. bot was offline when it was created) — post fresh.
@@ -105,12 +131,12 @@ discord.once('ready', () => {
       handleDelete(payload.old.id).catch((err) => console.error('handleDelete failed:', err));
     })
     .subscribe((status, error) => {
-  console.log('Supabase realtime status:', status);
+      console.log('Supabase realtime status:', status);
 
-  if (error) {
-    console.error('Supabase realtime error:', error);
-  }
-});
+      if (error) {
+        console.error('Supabase realtime error:', error);
+      }
+    });
 });
 
 discord.login(DISCORD_TOKEN);
