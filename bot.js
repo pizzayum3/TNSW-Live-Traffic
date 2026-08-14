@@ -27,6 +27,7 @@ const discord = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 const LOGO_PATH = path.join(__dirname, 'logo.png');
 const BANNER_PATH = path.join(__dirname, 'banner.png');
+
 const attachments = () => [
   new AttachmentBuilder(LOGO_PATH, { name: 'logo.png' }),
   new AttachmentBuilder(BANNER_PATH, { name: 'banner.png' }),
@@ -53,9 +54,27 @@ async function clearMapping(incidentId) {
 }
 
 export async function handleInsert(incident) {
+  const existing = await getMapping(incident.id);
+
+  if (existing) {
+    console.log(
+      `Incident ${incident.id} already has a Discord message. Skipping duplicate.`
+    );
+    return;
+  }
+
   const channel = await discord.channels.fetch(DISCORD_CHANNEL_ID);
-  const embed = buildEmbed(incident, { logoUrl: 'attachment://logo.png', bannerUrl: 'attachment://banner.png' });
-  const msg = await channel.send({ embeds: [embed], files: attachments() });
+
+  const embed = buildEmbed(incident, {
+    logoUrl: 'attachment://logo.png',
+    bannerUrl: 'attachment://banner.png',
+  });
+
+  const msg = await channel.send({
+    embeds: [embed],
+    files: attachments(),
+  });
+
   await saveMapping(incident.id, channel.id, msg.id);
 }
 
