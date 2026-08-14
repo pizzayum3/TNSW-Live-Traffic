@@ -78,28 +78,6 @@ export async function handleInsert(incident) {
   await saveMapping(incident.id, channel.id, msg.id);
 }
 
-export async function handleUpdate(incident) {
-    const existing = await getMapping(incident.id);
-
-  if (existing) {
-    console.log(
-      `Incident ${incident.id} already has a Discord message. Skipping duplicate.`
-    );
-    return;
-  }
-
-  const channel = await discord.channels.fetch(DISCORD_CHANNEL_ID);
-
-  const embed = buildEmbed(incident, {
-    logoUrl: 'attachment://logo.png',
-    bannerUrl: 'attachment://banner.png',
-  });
-
-  const msg = await channel.send({
-    embeds: [embed],
-    files: attachments(),
-  });
-
 
 export async function handleDelete(incidentId) {
   const mapping = await getMapping(incidentId);
