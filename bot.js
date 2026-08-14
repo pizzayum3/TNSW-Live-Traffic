@@ -98,7 +98,13 @@ discord.once('ready', () => {
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'incidents' }, (payload) => {
       handleDelete(payload.old.id).catch((err) => console.error('handleDelete failed:', err));
     })
-    .subscribe((status) => console.log('Supabase realtime status:', status));
+    .subscribe((status, error) => {
+  console.log('Supabase realtime status:', status);
+
+  if (error) {
+    console.error('Supabase realtime error:', error);
+  }
+});
 });
 
 discord.login(DISCORD_TOKEN);
