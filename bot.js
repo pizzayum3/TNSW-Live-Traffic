@@ -79,15 +79,17 @@ export async function handleInsert(incident) {
 }
 
 export async function handleUpdate(incident) {
-  // If the incident has ended, delete its Discord message
-  if (incident.status === 'Ended') {
+  // If the incident has ended, delete the Discord message and stop.
+  if (String(incident.status).trim().toLowerCase() === 'ended') {
+    console.log(`Incident ${incident.id} has ended. Deleting Discord message.`);
     await handleDelete(incident.id);
     return;
   }
 
   const mapping = await getMapping(incident.id);
+
   if (!mapping) {
-    // We don't have a message for this one yet — post fresh.
+    console.log(`No Discord mapping found for incident ${incident.id}. Creating message.`);
     await handleInsert(incident);
     return;
   }
@@ -100,13 +102,16 @@ export async function handleUpdate(incident) {
   try {
     const channel = await discord.channels.fetch(mapping.channel_id);
     const msg = await channel.messages.fetch(mapping.message_id);
-    await msg.edit({ embeds: [embed] });
+
+    await msg.edit({
+      embeds: [embed],
+    });
+
   } catch (err) {
     console.error(
-      `Could not edit message ${mapping.message_id}, posting a new one instead:`,
+      `Could not edit message ${mapping.message_id}:`,
       err.message
     );
-    await handleInsert(incident);
   }
 }
 
