@@ -25,8 +25,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 });
 const discord = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-const LOGO_PATH = path.join(__dirname, 'assets', 'logo.png');
-const BANNER_PATH = path.join(__dirname, 'assets', 'banner.png');
+const LOGO_PATH = path.join(__dirname, 'logo.png');
+const BANNER_PATH = path.join(__dirname, 'banner.png');
 const attachments = () => [
   new AttachmentBuilder(LOGO_PATH, { name: 'logo.png' }),
   new AttachmentBuilder(BANNER_PATH, { name: 'banner.png' }),
