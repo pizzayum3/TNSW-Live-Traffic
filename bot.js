@@ -52,13 +52,30 @@ async function clearMapping(incidentId) {
   const { error } = await supabase.from('discord_messages').delete().eq('incident_id', incidentId);
   if (error) console.error('clearMapping error:', error.message);
 }
+// Atomically "claims" an incident before we post anything for it. Relies on
+// incident_id being the primary key of discord_messages: if two events for the
+// same incident get processed at nearly the same moment (e.g. two bot instances
+// running, or a realtime reconnect redelivering an event), only ONE of them can
+// win this insert — the other gets told "already claimed" and skips posting.
+// This is what actually prevents double messages, instead of the old
+// check-then-act pattern which had a race condition.
+async function tryClaim(incidentId) {
+  const { data, error } = await supabase
+    .from('discord_messages')
+    .upsert(
+      { incident_id: incidentId, channel_id: 'pending', message_id: 'pending' },
+      { onConflict: 'incident_id', ignoreDuplicates: true }
+    )
+    .select();
+  if (error) { console.error('tryClaim error:', error.message); return false; }
+  return Array.isArray(data) && data.length > 0;
+}
 
 export async function handleInsert(incident) {
-  const existing = await getMapping(incident.id);
-
-  if (existing) {
+  const claimed = await tryClaim(incident.id);
+  if (!claimed) {
     console.log(
-      `Incident ${incident.id} already has a Discord message. Skipping duplicate.`
+      `Incident ${incident.id} is already claimed (message exists or is being created elsewhere). Skipping duplicate.`
     );
     return;
   }
