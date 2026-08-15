@@ -98,11 +98,12 @@
   .row-card .rc-time{font-size:10.5px;color:var(--text-faint);margin-top:3px;font-family:var(--font-mono);}
 
   .legend-list{padding:14px 16px;font-size:12.5px;color:var(--text-dim);overflow-y:auto;}
-  .legend-group{margin-bottom:14px;}
-  .legend-group .lg-title{font-weight:700;color:var(--text);font-size:12.5px;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
-  .legend-levels{display:flex;flex-wrap:wrap;gap:10px;padding-left:20px;}
-  .legend-levels span{display:flex;align-items:center;gap:5px;font-size:11.5px;}
-  .legend-ended-note{margin-top:6px;padding-top:12px;border-top:1px solid var(--grey-line);display:flex;align-items:center;gap:8px;font-weight:600;color:var(--text);}
+  .legend-group{margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--grey-line-2);}
+  .legend-group:last-child{border-bottom:none;}
+  .legend-group .lg-title{font-weight:700;color:var(--text);font-size:12.5px;margin-bottom:10px;}
+  .legend-levels{display:flex;flex-wrap:wrap;gap:12px;}
+  .legend-level-item{display:flex;flex-direction:column;align-items:center;gap:5px;width:54px;text-align:center;}
+  .legend-level-item span{font-size:10.5px;color:var(--text-dim);line-height:1.2;}
 
   .command-section{padding:14px 16px;overflow-y:auto;}
   .command-section h4{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);margin:16px 0 8px;font-weight:700;}
@@ -146,7 +147,7 @@
   .detail-panel{position:absolute;top:0;right:0;bottom:0;width:380px;max-width:92vw;background:#fff;border-left:1px solid var(--grey-line);box-shadow:-8px 0 24px rgba(0,0,0,.08);transform:translateX(100%);transition:transform .18s ease;z-index:30;display:flex;flex-direction:column;}
   .detail-panel.open{transform:translateX(0);}
   .dp-hero{padding:20px 18px 16px;display:flex;gap:14px;align-items:flex-start;border-bottom:1px solid var(--grey-line);}
-  .dp-icon{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:#fff;}
+  .dp-icon{width:46px;height:46px;flex-shrink:0;}
   .dp-title{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;line-height:1.3;}
   .dp-badge{display:inline-block;margin-top:8px;border:1px solid var(--grey-line);border-radius:14px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--text-dim);}
   .close-x{background:none;border:none;font-size:20px;color:var(--text-faint);margin-left:auto;line-height:1;padding:2px 4px;}
@@ -375,6 +376,53 @@ function levelInfo(type, levelId){
   return t.levels.find(l=>l.id===levelId) || t.levels[0];
 }
 
+/* ============================= ICON GLYPHS ============================= */
+const NEUTRAL_ICON_COLOR = '#5b6675';
+function typeIconInner(typeId){
+  const CAR = 'M11 20.5c0-1 .5-1.6 1-2.2l1.3-4c.2-.6.7-1 1.4-1h4.6c.7 0 1.2.4 1.4 1l1.3 4c.5.6 1 1.2 1 2.2v1.3c0 .4-.3.7-.7.7h-.6a.7.7 0 0 1-.7-.7v-.3H12.3v.3c0 .4-.3.7-.7.7h-.6a.7.7 0 0 1-.7-.7z';
+  switch(typeId){
+    case 'crash':
+      return `<g transform="translate(30,32) scale(2.0) translate(-16,-21)"><path fill="#fff" d="${CAR}"/><circle cx="13.2" cy="21.5" r="1.1" fill="context-fill"/><circle cx="20.8" cy="21.5" r="1.1" fill="context-fill"/></g>`;
+    case 'breakdown':
+      return `<g transform="translate(27,33) scale(1.7) translate(-16,-21)"><path fill="#fff" d="${CAR}"/></g>
+        <g transform="translate(41,17) rotate(45)"><path fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" d="M-5 -5 a2.6 2.6 0 1 0 5 5 l5 5 M-1.5 -1.5 l-3 -3"/></g>`;
+    case 'hazard':
+      return `<line x1="30" y1="18" x2="30" y2="34" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="30" cy="41" r="2" fill="#fff"/>`;
+    case 'roadwork':
+      return `<g transform="translate(30,30)"><path fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" d="M0 -13 L8 13 L-8 13 Z"/><line x1="-5.3" y1="4" x2="5.3" y2="4" stroke="#fff" stroke-width="1.8"/><line x1="-9.5" y1="13" x2="9.5" y2="13" stroke="#fff" stroke-width="1.8"/></g>`;
+    case 'traffic_conditions':
+      return `<circle cx="30" cy="20" r="2.2" fill="#fff"/><line x1="30" y1="26" x2="30" y2="42" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`;
+    case 'closure':
+      return `<circle cx="30" cy="30" r="12" fill="none" stroke="#fff" stroke-width="2.6"/><line x1="21.5" y1="38.5" x2="38.5" y2="21.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>`;
+    case 'traffic_lights':
+      return `<rect x="24" y="15" width="12" height="30" rx="4" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="30" cy="22" r="1.8" fill="#fff"/><circle cx="30" cy="30" r="1.8" fill="#fff"/><circle cx="30" cy="38" r="1.8" fill="#fff"/>`;
+    case 'event':
+      return `<path fill="#fff" d="M30 15 L33.5 25 L44 25 L35.5 31.5 L38.5 42 L30 35.5 L21.5 42 L24.5 31.5 L16 25 L26.5 25 Z"/>`;
+    case 'fire':
+      return `<path fill="#fff" fill-rule="evenodd" d="M31 15 C27 20 21 24 22 31 C22.5 36.5 26.7 40 31 40 C35.8 40 39.5 36 39 31 C38.7 28.3 37 27.5 36.5 29 C37.5 24.5 34.5 19 31 15 Z M30.5 26 C28.5 29 27 31.5 27.5 34 C28 36.3 30 38 31.5 37.7 C33.3 37.3 34.3 35.2 33.7 33.3 C33.4 32.3 32.7 32.3 32.5 33.2 C32.5 30.5 31.7 28 30.5 26 Z"/>`;
+    case 'flood':
+      return `<path fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" d="M15 26 Q20 21 25 26 T35 26 T45 26"/><path fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" d="M15 35 Q20 30 25 35 T35 35 T45 35"/>`;
+    case 'water_level':
+      return `<line x1="17" y1="19" x2="43" y2="19" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="17" y1="27" x2="38" y2="27" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="17" y1="35" x2="33" y2="35" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="17" y1="43" x2="28" y2="43" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>`;
+    case 'snow_ice':
+      return `<g transform="translate(30,30)"><line x1="0" y1="-12" x2="0" y2="12" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="-10.4" y1="-6" x2="10.4" y2="6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="-10.4" y1="6" x2="10.4" y2="-6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></g>`;
+    case 'weather':
+      return `<path fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M18 26 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -2 a6 6 0 0 1 5 11 Z"/><line x1="21" y1="32" x2="19" y2="38" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="30" y1="32" x2="28" y2="38" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="39" y1="32" x2="37" y2="38" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>`;
+    case 'rfs':
+      return `<path fill="#fff" fill-rule="evenodd" d="M30 20 C25.5 27 24 31 25.5 36 C26.3 38.4 28.5 40 30 40 C31.5 40 33.7 38.4 34.5 36 C35.3 33.6 33.9 32 33 32.8 C33.8 28.6 31.5 23.6 30 20 Z"/>`;
+    default:
+      return `<circle cx="30" cy="30" r="3" fill="#fff"/>`;
+  }
+}
+function typeIconSvg(typeId, color, sizePx){
+  sizePx = sizePx || 24;
+  const inner = typeIconInner(typeId).replace(/context-fill/g, color);
+  const shape = (typeId === 'rfs')
+    ? `<path d="M30 4 L58 54 L2 54 Z" fill="${color}"/>`
+    : `<circle cx="30" cy="30" r="28" fill="${color}"/>`;
+  return `<svg width="${sizePx}" height="${sizePx}" viewBox="0 0 60 60" style="display:block;flex-shrink:0;">${shape}${inner}</svg>`;
+}
+
 /* ============================= STATE ============================= */
 let incidents = [];
 let session = null;
@@ -481,15 +529,18 @@ function renderFilterControls(){
     `<div class="chip ${activeStatus===id?'active':''}" onclick="setStatus('${id}')">${l}</div>`).join('');
   $('typeFilters').innerHTML = TYPES.map(t=>
     `<label class="filter-opt"><input type="checkbox" ${activeTypes.has(t.id)?'checked':''} onchange="toggleType('${t.id}')">
-      <span class="swatch" style="background:${t.levels[0].color}"></span>${t.icon} ${t.label}</label>`).join('');
+      ${typeIconSvg(t.id, NEUTRAL_ICON_COLOR, 18)} ${t.label}</label>`).join('');
 
-  $('legendList').innerHTML = TYPES.map(t => `
+  $('legendList').innerHTML = TYPES.map(t => {
+    const levels = t.id === 'rfs' ? t.levels : [...t.levels, { id:'ended', label:'Ended', color: ENDED_COLOR }];
+    return `
     <div class="legend-group">
-      <div class="lg-title">${t.icon} ${t.label}</div>
+      <div class="lg-title">${t.label}</div>
       <div class="legend-levels">
-        ${t.levels.map(l=>`<span><span class="swatch" style="background:${l.color}"></span>${l.label}</span>`).join('')}
+        ${levels.map(l=>`<div class="legend-level-item">${typeIconSvg(t.id, l.color, 40)}<span>${l.label}</span></div>`).join('')}
       </div>
-    </div>`).join('') + `<div class="legend-ended-note"><span class="swatch" style="background:${ENDED_COLOR}"></span>Resolved / Ended</div>`;
+    </div>`;
+  }).join('');
 }
 window.setStatus = (id)=>{ activeStatus=id; renderFilterControls(); renderFeed(); renderMap(); };
 window.toggleType = (id)=>{ activeTypes.has(id) ? activeTypes.delete(id) : activeTypes.add(id); renderFilterControls(); renderFeed(); renderMap(); };
@@ -546,7 +597,7 @@ function renderDetailPanel(){
   const updates = (i.updates||[]).slice().reverse();
   panel.innerHTML = `
     <div class="dp-hero">
-      <div class="dp-icon" style="background:${markerColor(i)}">${ti.icon}</div>
+      <div class="dp-icon">${typeIconSvg(i.type, markerColor(i), 46)}</div>
       <div style="flex:1;">
         <div class="dp-title">${esc(i.title) || ti.label}</div>
         <div class="dp-badge">${i.road_type === 'state' ? 'State road' : 'Local road'}</div>
@@ -599,7 +650,7 @@ window.onTypeChange = ()=>{
 };
 window.openNewModal = ()=>{
   if (!myRole) return;
-  $('fType').innerHTML = TYPES.map(t=>`<option value="${t.id}">${t.icon} ${t.label}</option>`).join('');
+  $('fType').innerHTML = TYPES.map(t=>`<option value="${t.id}">${t.label}</option>`).join('');
   onTypeChange();
   $('fTitle').value=''; $('fLocation').value=''; $('fRoad').value=''; $('fSchedule').value='';
   $('fUnits').value=''; $('fDesc').value=''; $('fAdvice').value=''; $('fDiversions').value=''; $('fRoadType').value='local';
