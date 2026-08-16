@@ -45,7 +45,3 @@ export function levelInfo(type, levelId) {
 export function colorInt(hex) {
   return parseInt(hex.replace('#', ''), 16);
 }
-// Matches the filenames written by generate_icons.mjs into assets/icons/
-export function iconFileName(typeId, levelId, isResolved) {
-  return isResolved ? `${typeId}_ended.png` : `${typeId}_${levelId}.png`;
-}

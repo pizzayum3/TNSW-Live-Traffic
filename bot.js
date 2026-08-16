@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Client, GatewayIntentBits, AttachmentBuilder } from 'discord.js';
 import { createClient } from '@supabase/supabase-js';
-import { buildEmbed, buildBannerEmbed, resolveIconFileName } from './embeds.js';
+import { buildEmbed } from './embeds.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -27,27 +27,11 @@ const discord = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 const LOGO_PATH = path.join(__dirname, 'logo.png');
 const BANNER_PATH = path.join(__dirname, 'banner.png');
-const ICONS_DIR = path.join(__dirname, 'icons');
 
-// The two embeds sent per incident: a slim banner card first, then the main
-// details card right below it, in the same message.
-function embedsFor(incident) {
-  const iconFile = resolveIconFileName(incident);
-  const bannerEmbed = buildBannerEmbed(incident, { bannerUrl: 'attachment://banner.png' });
-  const mainEmbed = buildEmbed(incident, {
-    logoUrl: 'attachment://logo.png',
-    iconUrl: `attachment://${iconFile}`,
-  });
-  return [bannerEmbed, mainEmbed];
-}
-function attachmentsFor(incident) {
-  const iconFile = resolveIconFileName(incident);
-  return [
-    new AttachmentBuilder(LOGO_PATH, { name: 'logo.png' }),
-    new AttachmentBuilder(BANNER_PATH, { name: 'banner.png' }),
-    new AttachmentBuilder(path.join(ICONS_DIR, iconFile), { name: iconFile }),
-  ];
-}
+const attachments = () => [
+  new AttachmentBuilder(LOGO_PATH, { name: 'logo.png' }),
+  new AttachmentBuilder(BANNER_PATH, { name: 'banner.png' }),
+];
 
 async function getMapping(incidentId) {
   const { data, error } = await supabase
@@ -98,16 +82,21 @@ export async function handleInsert(incident) {
 
   const channel = await discord.channels.fetch(DISCORD_CHANNEL_ID);
 
+  const embed = buildEmbed(incident, {
+    logoUrl: 'attachment://logo.png',
+    bannerUrl: 'attachment://banner.png',
+  });
+
   const msg = await channel.send({
-    embeds: embedsFor(incident),
-    files: attachmentsFor(incident),
+    embeds: [embed],
+    files: attachments(),
   });
 
   await saveMapping(incident.id, channel.id, msg.id);
 }
 
 export async function handleUpdate(incident) {
-  // NEW: once an incident is marked ended, remove its message instead of editing it,
+  // Once an incident is marked ended, remove its message instead of editing it,
   // so the channel doesn't fill up with resolved incidents.
   if (incident.status === 'resolved') {
     await handleDelete(incident.id);
@@ -120,10 +109,11 @@ export async function handleUpdate(incident) {
     await handleInsert(incident);
     return;
   }
+  const embed = buildEmbed(incident, { logoUrl: 'attachment://logo.png', bannerUrl: 'attachment://banner.png' });
   try {
     const channel = await discord.channels.fetch(mapping.channel_id);
     const msg = await channel.messages.fetch(mapping.message_id);
-    await msg.edit({ embeds: embedsFor(incident), files: attachmentsFor(incident) });
+    await msg.edit({ embeds: [embed] });
   } catch (err) {
     console.error(`Could not edit message ${mapping.message_id}, posting a new one instead:`, err.message);
     await handleInsert(incident);
