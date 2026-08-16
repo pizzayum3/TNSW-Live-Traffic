@@ -125,8 +125,8 @@
   .role-chip{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12.5px;}
   .role-chip .rn{flex:1;font-weight:600;}
 
-  .map-area{flex:1;position:relative;background:#dfe6ec;overflow:hidden;}
-  .map-inner{position:absolute;inset:0;}
+  .map-area{flex:1;position:relative;background:#dfe6ec;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+  .map-inner{position:relative;overflow:hidden;flex-shrink:0;}
   .map-inner img{width:100%;height:100%;object-fit:cover;}
   #pinLayer{position:absolute;inset:0;}
   #lineLayer{position:absolute;inset:0;width:100%;height:100%;}
@@ -744,7 +744,22 @@ window.closeModal = (id)=>{
 document.querySelectorAll('.overlay').forEach(ov=> ov.addEventListener('click', e=>{ if(e.target===ov) closeModal(ov.id); }));
 
 /* ============================= TABS / SIDEBAR ============================= */
-window.toggleSidebar = ()=> $('sidebar').classList.toggle('collapsed');
+/* ============================= MAP SQUARE SIZING =============================
+   The map has to be a true square for every viewer, or the same stored x/y%
+   coordinates land in different spots depending on each person's window shape.
+   This measures the available space and forces #mapScroll to the largest
+   square that fits, centered, on load / resize / sidebar toggle. */
+function sizeMapSquare(){
+  const area = document.querySelector('.map-area');
+  const square = $('mapScroll');
+  if (!area || !square) return;
+  const size = Math.max(0, Math.min(area.clientWidth, area.clientHeight));
+  square.style.width = size + 'px';
+  square.style.height = size + 'px';
+}
+window.addEventListener('resize', sizeMapSquare);
+
+window.toggleSidebar = ()=> { $('sidebar').classList.toggle('collapsed'); setTimeout(sizeMapSquare, 210); };
 window.switchTab = (name)=>{
   activeTab = name;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
@@ -840,6 +855,7 @@ window.removeRole = async (id)=>{
 await refreshSession();
 await loadIncidents();
 subscribeRealtime();
+sizeMapSquare();
 
 } catch (err) {
   showFatal((err && err.stack) ? err.stack : String(err));
