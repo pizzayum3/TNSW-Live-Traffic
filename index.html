@@ -382,10 +382,9 @@ function typeIconInner(typeId){
   const CAR = 'M11 20.5c0-1 .5-1.6 1-2.2l1.3-4c.2-.6.7-1 1.4-1h4.6c.7 0 1.2.4 1.4 1l1.3 4c.5.6 1 1.2 1 2.2v1.3c0 .4-.3.7-.7.7h-.6a.7.7 0 0 1-.7-.7v-.3H12.3v.3c0 .4-.3.7-.7.7h-.6a.7.7 0 0 1-.7-.7z';
   switch(typeId){
     case 'crash':
-      return `<g transform="translate(30,32) scale(2.0) translate(-16,-21)"><path fill="#fff" d="${CAR}"/><circle cx="13.2" cy="21.5" r="1.1" fill="context-fill"/><circle cx="20.8" cy="21.5" r="1.1" fill="context-fill"/></g>`;
+      return `<g transform="translate(30,34)"><path fill="#fff" d="M-13 3 L-11 -3 Q-9 -6 -5 -6 L2 -6 Q6 -6 8 -3 L11 2 L13 2 Q14 2 14 3.5 L14 5 Q14 6 13 6 L-13 6 Q-14 6 -14 5 L-14 4 Q-14 3 -13 3 Z"/><circle cx="-8" cy="7" r="2" fill="#fff"/><circle cx="8" cy="7" r="2" fill="#fff"/></g><path fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M15 12 L20 16 L16 17 L22 22"/>`;
     case 'breakdown':
-      return `<g transform="translate(27,33) scale(1.7) translate(-16,-21)"><path fill="#fff" d="${CAR}"/></g>
-        <g transform="translate(41,17) rotate(45)"><path fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" d="M-5 -5 a2.6 2.6 0 1 0 5 5 l5 5 M-1.5 -1.5 l-3 -3"/></g>`;
+      return `<g transform="translate(27,35)"><path fill="#fff" d="M-13 3 L-11 -3 Q-9 -6 -5 -6 L2 -6 Q6 -6 8 -3 L11 2 L13 2 Q14 2 14 3.5 L14 5 Q14 6 13 6 L-13 6 Q-14 6 -14 5 L-14 4 Q-14 3 -13 3 Z"/><circle cx="-8" cy="7" r="2" fill="#fff"/><circle cx="8" cy="7" r="2" fill="#fff"/></g><circle cx="39" cy="13" r="3.6" fill="none" stroke="#fff" stroke-width="2"/><line x1="36.5" y1="15.5" x2="27" y2="25" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="25.5" cy="26.5" r="2" fill="#fff"/>`;
     case 'hazard':
       return `<line x1="30" y1="18" x2="30" y2="34" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="30" cy="41" r="2" fill="#fff"/>`;
     case 'roadwork':
@@ -409,7 +408,7 @@ function typeIconInner(typeId){
     case 'weather':
       return `<path fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M18 26 a6 6 0 0 1 0 -12 a7 7 0 0 1 13 -2 a6 6 0 0 1 5 11 Z"/><line x1="21" y1="32" x2="19" y2="38" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="30" y1="32" x2="28" y2="38" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="39" y1="32" x2="37" y2="38" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>`;
     case 'rfs':
-      return `<path fill="#fff" fill-rule="evenodd" d="M30 20 C25.5 27 24 31 25.5 36 C26.3 38.4 28.5 40 30 40 C31.5 40 33.7 38.4 34.5 36 C35.3 33.6 33.9 32 33 32.8 C33.8 28.6 31.5 23.6 30 20 Z"/>`;
+      return `<path fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" d="M14 45 L23 28 L28 36 L32 30 L42 45 Z"/><path fill="#fff" d="M28 16 C26 19 25 21 25.5 23.5 C25.8 25 27 26 28 26 C29 26 30 25 30.2 23.7 C30.4 22.7 29.8 22.4 29.5 23 C29.8 20.6 28.7 18 28 16 Z"/>`;
     default:
       return `<circle cx="30" cy="30" r="3" fill="#fff"/>`;
   }
@@ -418,7 +417,7 @@ function typeIconSvg(typeId, color, sizePx){
   sizePx = sizePx || 24;
   const inner = typeIconInner(typeId).replace(/context-fill/g, color);
   const shape = (typeId === 'rfs')
-    ? `<path d="M30 4 L58 54 L2 54 Z" fill="${color}"/>`
+    ? `<path d="M30 4 Q32 4 33 6.3 L57 49 Q58.5 52 55.5 52 L4.5 52 Q1.5 52 3 49 L27 6.3 Q28 4 30 4 Z" fill="${color}"/>`
     : `<circle cx="30" cy="30" r="28" fill="${color}"/>`;
   return `<svg width="${sizePx}" height="${sizePx}" viewBox="0 0 60 60" style="display:block;flex-shrink:0;">${shape}${inner}</svg>`;
 }
