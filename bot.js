@@ -4,10 +4,11 @@ import { fileURLToPath } from 'url';
 import { Client, GatewayIntentBits, AttachmentBuilder } from 'discord.js';
 import { createClient } from '@supabase/supabase-js';
 import { buildEmbed } from './embeds.js';
+import { registerReportInteractions } from './interactions.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const { DISCORD_TOKEN, DISCORD_CHANNEL_ID, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
+const { DISCORD_TOKEN, DISCORD_CHANNEL_ID, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DISCORD_REPORT_REVIEW_CHANNEL_ID } = process.env;
 const missing = ['DISCORD_TOKEN', 'DISCORD_CHANNEL_ID', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']
   .filter((k) => !process.env[k]);
 if (missing.length) {
@@ -135,6 +136,13 @@ export async function handleDelete(incidentId) {
 
 discord.once('ready', () => {
   console.log(`Logged in as ${discord.user.tag}`);
+
+  if (DISCORD_REPORT_REVIEW_CHANNEL_ID) {
+    registerReportInteractions(discord, supabase, { reviewChannelId: DISCORD_REPORT_REVIEW_CHANNEL_ID });
+    console.log('Civilian report reviewing is enabled.');
+  } else {
+    console.log('DISCORD_REPORT_REVIEW_CHANNEL_ID not set — /report will not work until you add it.');
+  }
 
   supabase
     .channel('bot-incidents')
