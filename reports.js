@@ -1,10 +1,11 @@
+
 import { EmbedBuilder } from 'discord.js';
 import { typeInfo, colorInt } from './types.js';
-
+ 
 const GREY = 0x9AA5B1;
 const GREEN = 0x1c8a52;
 const RED = 0xc8202f;
-
+ 
 /**
  * The embed posted in the command-review channel for Command to act on.
  */
@@ -24,7 +25,7 @@ export function buildReportReviewEmbed(report) {
   if (report.description) embed.addFields({ name: 'Description', value: report.description });
   return embed;
 }
-
+ 
 /**
  * What the review embed becomes after Command acts on it (edited in place,
  * buttons removed) — keeps a visible record without needing to delete it.
@@ -44,7 +45,7 @@ export function buildReportDecidedEmbed(report) {
   });
   return base;
 }
-
+ 
 /**
  * Ephemeral confirmation shown to the civilian right after they submit.
  */
@@ -55,7 +56,7 @@ export function buildReportSubmittedEmbed(report) {
     .setTitle('Report submitted')
     .setDescription(`Your ${t.label.toLowerCase()} report at postal ${report.postal} has been sent to Command for review. You'll be notified once it's actioned.`);
 }
-
+ 
 /**
  * DM'd (or ephemerally shown, if DMs are closed) to the reporter once decided.
  */
@@ -65,7 +66,7 @@ export function buildReportOutcomeEmbed(report) {
     return new EmbedBuilder()
       .setColor(GREEN)
       .setTitle('Report approved')
-      .setDescription(`Your ${t.label.toLowerCase()} report at postal ${report.postal} was approved and is being added to Live Traffic NSW. Thanks for the report.`);
+      .setDescription(`Your ${t.label.toLowerCase()} report has been approved and reported via **Live Traffic NSW**. Thank you for contributing to a safer NSW!`);
   }
   const blacklisted = report.status === 'denied_blacklisted';
   return new EmbedBuilder()
@@ -77,7 +78,7 @@ export function buildReportOutcomeEmbed(report) {
         : `Your ${t.label.toLowerCase()} report at postal ${report.postal} was reviewed and not approved.`
     );
 }
-
+ 
 /**
  * A ready-to-copy summary so Command can quickly finish adding an approved
  * report to the live map through the website (which needs a real map pin
@@ -93,3 +94,4 @@ export function buildAddToSiteSummary(report) {
   lines.push(`Reported by: ${report.reporter_username || report.reporter_discord_id}`);
   return lines.join('\n');
 }
+ 
