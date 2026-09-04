@@ -5,10 +5,18 @@ import { Client, GatewayIntentBits, AttachmentBuilder } from 'discord.js';
 import { createClient } from '@supabase/supabase-js';
 import { buildEmbed } from './embeds.js';
 import { registerReportInteractions } from './interactions.js';
+import { buildCommandLogEmbed } from './commandlog.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const { DISCORD_TOKEN, DISCORD_CHANNEL_ID, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DISCORD_REPORT_REVIEW_CHANNEL_ID } = process.env;
+const {
+  DISCORD_TOKEN,
+  DISCORD_CHANNEL_ID,
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY,
+  DISCORD_REPORT_REVIEW_CHANNEL_ID,
+  DISCORD_COMMAND_LOG_CHANNEL_ID,
+} = process.env;
 const missing = ['DISCORD_TOKEN', 'DISCORD_CHANNEL_ID', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']
   .filter((k) => !process.env[k]);
 if (missing.length) {
@@ -58,8 +66,6 @@ async function clearMapping(incidentId) {
 // same incident get processed at nearly the same moment (e.g. two bot instances
 // running, or a realtime reconnect redelivering an event), only ONE of them can
 // win this insert — the other gets told "already claimed" and skips posting.
-// This is what actually prevents double messages, instead of the old
-// check-then-act pattern which had a race condition.
 async function tryClaim(incidentId) {
   const { data, error } = await supabase
     .from('discord_messages')
@@ -106,7 +112,6 @@ export async function handleUpdate(incident) {
 
   const mapping = await getMapping(incident.id);
   if (!mapping) {
-    // We don't have a message for this one yet (e.g. bot was offline when it was created) — post fresh.
     await handleInsert(incident);
     return;
   }
@@ -134,6 +139,20 @@ export async function handleDelete(incidentId) {
   await clearMapping(incidentId);
 }
 
+// New: posts every command_log row (created automatically by the database
+// trigger whenever an incident is created/updated/deleted) to a dedicated
+// Command-only channel. Read-only listener — nothing to edit or delete here,
+// the log is append-only.
+export async function handleCommandLog(entry) {
+  if (!DISCORD_COMMAND_LOG_CHANNEL_ID) return;
+  try {
+    const channel = await discord.channels.fetch(DISCORD_COMMAND_LOG_CHANNEL_ID);
+    await channel.send({ embeds: [buildCommandLogEmbed(entry)] });
+  } catch (err) {
+    console.error('Failed to post command log entry:', err.message);
+  }
+}
+
 discord.once('ready', () => {
   console.log(`Logged in as ${discord.user.tag}`);
 
@@ -142,6 +161,12 @@ discord.once('ready', () => {
     console.log('Civilian report reviewing is enabled.');
   } else {
     console.log('DISCORD_REPORT_REVIEW_CHANNEL_ID not set — /report will not work until you add it.');
+  }
+
+  if (DISCORD_COMMAND_LOG_CHANNEL_ID) {
+    console.log('Command log channel posting is enabled.');
+  } else {
+    console.log('DISCORD_COMMAND_LOG_CHANNEL_ID not set — command log will not be posted to Discord until you add it.');
   }
 
   supabase
@@ -157,10 +182,17 @@ discord.once('ready', () => {
     })
     .subscribe((status, error) => {
       console.log('Supabase realtime status:', status);
+      if (error) console.error('Supabase realtime error:', error);
+    });
 
-      if (error) {
-        console.error('Supabase realtime error:', error);
-      }
+  supabase
+    .channel('bot-command-log')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'command_log' }, (payload) => {
+      handleCommandLog(payload.new).catch((err) => console.error('handleCommandLog failed:', err));
+    })
+    .subscribe((status, error) => {
+      console.log('Command log realtime status:', status);
+      if (error) console.error('Command log realtime error:', error);
     });
 });
 
