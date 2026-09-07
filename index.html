@@ -20,7 +20,7 @@
     --grey-line-2:#f0eee4;
     --text:#1b2430;
     --text-dim:#5b6675;
-    --text-faint:#95a0ae;
+    --text-faint:#6b7684;
     --heavy:#8B1E1E;
     --moderate-gold:#E8B923;
     --moderate-orange:#E8781F;
@@ -31,6 +31,26 @@
     --green:#1c8a52;
     --font:'Inter',Arial,sans-serif;
     --font-mono:'IBM Plex Mono',monospace;
+  }
+  /* Dark mode: same tokens, overridden values. Verified contrast ratios:
+     text 14.04:1, text-dim 8.65:1, text-faint 5.59:1 (all on --paper), each
+     comfortably clearing the 4.5:1 minimum for small text. */
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#1c2230;
+      --grey-bg:#12161f;
+      --grey-line:#2c3444;
+      --grey-line-2:#242c3a;
+      --text:#eef1f6;
+      --text-dim:#b7c0cc;
+      --text-faint:#8f9aab;
+      --ink:#eef1f6;
+    }
+    body{background:var(--grey-bg);}
+    .map-area{background:#0c0f16;}
+    .marker{border-color:var(--paper);}
+    .btn{background:var(--paper);color:var(--text);}
+    .field input,.field select,.field textarea{background:var(--grey-bg);color:var(--text);}
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;height:100%;}
@@ -134,7 +154,7 @@
   #lineLayer{position:absolute;inset:0;width:100%;height:100%;}
   .map-scroll.placing{cursor:crosshair;}
   .zoom-controls{position:absolute;top:14px;right:14px;z-index:20;display:flex;flex-direction:column;background:#fff;border:1px solid var(--grey-line);border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.12);}
-  .zoom-controls button{width:34px;height:34px;border:none;background:#fff;font-size:16px;font-weight:700;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--grey-line);}
+  .zoom-controls button{width:44px;height:44px;border:none;background:#fff;font-size:18px;font-weight:700;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--grey-line);}
   .zoom-controls button:last-child{border-bottom:none;}
   .zoom-controls button:hover{background:var(--grey-bg);}
   .zoom-controls button:disabled{color:var(--text-faint);cursor:not-allowed;}
@@ -166,6 +186,7 @@
   .level-pill{font-size:10px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:10px;letter-spacing:.03em;color:#fff;}
   .status-pill{font-size:10px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:10px;letter-spacing:.03em;background:#e9ecf1;color:var(--text-dim);}
   .status-pill.resolved{background:#e2f4ea;color:var(--green);}
+  .status-pill.planned{background:#e6eefc;color:var(--blue);}
   .dp-section{margin-top:14px;border-top:1px solid var(--grey-line-2);padding-top:12px;}
   .dp-section h5{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);margin:0 0 6px;font-weight:700;}
   .dp-section p{font-size:12.5px;color:var(--text-dim);line-height:1.55;margin:0;}
@@ -297,6 +318,13 @@
   <div class="modal">
     <div class="modal-head"><h3>Report an incident</h3><button class="close-x" onclick="closeModal('newOverlay')">×</button></div>
     <div class="modal-body">
+      <div class="field">
+        <label>When</label>
+        <div class="geo-toggle">
+          <button type="button" id="timingCurrentBtn" class="active" onclick="setIncidentTiming('current')">Happening now</button>
+          <button type="button" id="timingPlannedBtn" onclick="setIncidentTiming('planned')">Planned</button>
+        </div>
+      </div>
       <div class="field-row">
         <div class="field"><label>Type</label><select id="fType" onchange="onTypeChange()"></select></div>
         <div class="field"><label>Level</label><select id="fLevel"></select></div>
@@ -307,7 +335,7 @@
         <div class="field"><label>Road type</label><select id="fRoadType"><option value="local">Local road</option><option value="state">State road</option></select></div>
       </div>
       <div class="field"><label>Road (optional)</label><input id="fRoad" placeholder="e.g. Highway 55, near Zone 407" /></div>
-      <div class="field"><label>Schedule (optional)</label><input id="fSchedule" placeholder="e.g. Mon 10 Aug to Mon 24 Aug" /></div>
+      <div class="field"><label id="scheduleLabel">Schedule (optional)</label><input id="fSchedule" placeholder="e.g. Mon 10 Aug to Mon 24 Aug" /></div>
       <div class="field">
         <label>Geometry</label>
         <div class="geo-toggle">
@@ -451,6 +479,7 @@ let drawingLine = false;     // line drawing mode
 let pendingPin = null;
 let pendingLine = [];
 let geometryMode = 'point';
+let incidentTiming = 'current';
 let activeTab = 'filters';
 let mapZoom = 1;
 let mapPanX = 0;
@@ -571,8 +600,14 @@ window.setStatus = (id)=>{ activeStatus=id; renderFilterControls(); renderFeed()
 window.toggleType = (id)=>{ activeTypes.has(id) ? activeTypes.delete(id) : activeTypes.add(id); renderFilterControls(); renderFeed(); renderMap(); };
 $('searchInput').addEventListener('input', e=>{ searchTerm=e.target.value; renderFeed(); renderMap(); });
 
+function severityTier(levelId){
+  if (['heavy','major','emergency'].includes(levelId)) return 'high';
+  if (['low','minor','advice'].includes(levelId)) return 'low';
+  return 'mid';
+}
 function markerColor(i){
   if (i.status==='resolved') return ENDED_COLOR;
+  if (i.status==='planned') return '#1958c9';
   return levelInfo(i.type, i.level).color;
 }
 function renderMap(){
@@ -581,7 +616,15 @@ function renderMap(){
   layer.innerHTML = list.map(i=>{
     const pulse = (i.status==='current' && (i.level==='heavy'||i.level==='major'||i.level==='emergency')) ? 'pulse' : '';
     const sel = i.id===openId ? 'selected' : '';
-    return `<div class="marker ${pulse} ${sel}" style="left:${i.x}%;top:${i.y}%;background:${markerColor(i)};" onclick="openDetail('${i.id}')" title="${esc(i.location)}"></div>`;
+    const tier = i.status==='resolved' ? 'ended' : severityTier(i.level);
+    const color = markerColor(i);
+    // Severity isn't conveyed by color alone: Low is a hollow ring, Moderate
+    // is a solid dot, Heavy is solid + pulses. Distinguishable by shape/motion
+    // even without color perception.
+    const style = tier==='low'
+      ? `background:#fff;border-color:${color};border-width:2.5px;`
+      : `background:${color};`;
+    return `<div class="marker tier-${tier} ${pulse} ${sel}" style="left:${i.x}%;top:${i.y}%;${style}" onclick="openDetail('${i.id}')" title="${esc(i.location)} — ${tier} severity"></div>`;
   }).join('');
 
   const lines = list.filter(i => i.geometry_type === 'line' && Array.isArray(i.line_points) && i.line_points.length > 1);
@@ -589,7 +632,8 @@ function renderMap(){
     const pts = i.line_points.map(p=>`${p.x},${p.y}`).join(' ');
     const color = markerColor(i);
     const sel = i.id===openId;
-    return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${sel?2.2:1.4}" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer;pointer-events:stroke;" onclick="openDetail('${i.id}')"></polyline>`;
+    const dash = severityTier(i.level)==='low' ? 'stroke-dasharray="2,1.4"' : '';
+    return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${sel?2.2:1.4}" stroke-linecap="round" stroke-linejoin="round" ${dash} style="cursor:pointer;pointer-events:stroke;" onclick="openDetail('${i.id}')"></polyline>`;
   }).join('');
 }
 function renderFeed(){
@@ -599,8 +643,10 @@ function renderFeed(){
   if (!list.length){ el.innerHTML = `<div class="feed-empty">No incidents match these filters.</div>`; return; }
   el.innerHTML = list.map(i=>{
     const ti = typeInfo(i.type);
+    const tier = i.status==='resolved' ? 'ended' : severityTier(i.level);
+    const dotStyle = tier==='low' ? `background:#fff;border:2px solid ${markerColor(i)};` : `background:${markerColor(i)};`;
     return `<div class="row-card" onclick="openDetail('${i.id}')">
-      <span class="dot" style="background:${markerColor(i)}"></span>
+      <span class="dot" style="${dotStyle}"></span>
       <div><div class="rc-type">${esc(i.title) || ti.label}</div><div class="rc-loc">${esc(i.location)}</div>
       <div class="rc-time">${timeAgo(i.created_at)}</div></div></div>`;
   }).join('');
@@ -648,6 +694,7 @@ function renderDetailPanel(){
       <div class="upd-form"><input id="updInput" placeholder="Post an update…" onkeydown="if(event.key==='Enter')postUpdate('${i.id}')">
       <button class="btn btn-sm" onclick="postUpdate('${i.id}')">Post</button></div>
       <div class="row-btns">
+        ${i.status==='planned' ? `<button class="btn btn-sm" onclick="setIncidentStatus('${i.id}','current')">▶ Make live now</button>` : ''}
         ${i.status!=='resolved' ? `<button class="btn btn-sm" onclick="setIncidentStatus('${i.id}','resolved')">✓ Mark ended</button>` : `<button class="btn btn-sm" onclick="setIncidentStatus('${i.id}','current')">↺ Reopen</button>`}
         ${myRole==='command' ? `<button class="btn btn-sm btn-danger" onclick="deleteIncident('${i.id}')">Delete</button>` : ''}
       </div>
@@ -681,8 +728,17 @@ window.openNewModal = ()=>{
   $('fUnits').value=''; $('fDesc').value=''; $('fAdvice').value=''; $('fDiversions').value=''; $('fRoadType').value='local';
   pendingPin = null; pendingLine = []; geometryMode = 'point';
   $('geoPointBtn').classList.add('active'); $('geoLineBtn').classList.remove('active');
+  incidentTiming = 'current';
+  $('timingCurrentBtn').classList.add('active'); $('timingPlannedBtn').classList.remove('active');
+  $('scheduleLabel').textContent = 'Schedule (optional)';
   updateLocPickerUI(); $('newError').style.display='none';
   $('newOverlay').style.display='flex';
+};
+window.setIncidentTiming = (timing)=>{
+  incidentTiming = timing;
+  $('timingCurrentBtn').classList.toggle('active', timing==='current');
+  $('timingPlannedBtn').classList.toggle('active', timing==='planned');
+  $('scheduleLabel').textContent = timing==='planned' ? 'Schedule (required for planned incidents)' : 'Schedule (optional)';
 };
 window.setGeometryMode = (mode)=>{
   geometryMode = mode; pendingPin = null; pendingLine = [];
@@ -751,8 +807,12 @@ window.submitNewIncident = async ()=>{
     err.textContent = !hasGeometry ? (geometryMode==='line' ? 'Please draw a road segment with at least 2 points.' : 'Please place a pin on the map.') : 'Location and description are required.';
     err.style.display='block'; return;
   }
+  if (incidentTiming === 'planned' && !schedule){
+    err.textContent = 'Please add a schedule so people know when this planned incident happens.';
+    err.style.display='block'; return;
+  }
   const payload = {
-    type, level, title: title || null, status:'current', location, road: road||null, road_type: roadType,
+    type, level, title: title || null, status: incidentTiming, location, road: road||null, road_type: roadType,
     schedule: schedule||null, units: units||null, description, advice: advice||null, diversions: diversions||null,
     x: pendingPin.x, y: pendingPin.y,
     geometry_type: geometryMode, line_points: geometryMode==='line' ? pendingLine : null,
