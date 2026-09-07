@@ -32,26 +32,6 @@
     --font:'Inter',Arial,sans-serif;
     --font-mono:'IBM Plex Mono',monospace;
   }
-  /* Dark mode: same tokens, overridden values. Verified contrast ratios:
-     text 14.04:1, text-dim 8.65:1, text-faint 5.59:1 (all on --paper), each
-     comfortably clearing the 4.5:1 minimum for small text. */
-  @media (prefers-color-scheme: dark){
-    :root{
-      --paper:#1c2230;
-      --grey-bg:#12161f;
-      --grey-line:#2c3444;
-      --grey-line-2:#242c3a;
-      --text:#eef1f6;
-      --text-dim:#b7c0cc;
-      --text-faint:#8f9aab;
-      --ink:#eef1f6;
-    }
-    body{background:var(--grey-bg);}
-    .map-area{background:#0c0f16;}
-    .marker{border-color:var(--paper);}
-    .btn{background:var(--paper);color:var(--text);}
-    .field input,.field select,.field textarea{background:var(--grey-bg);color:var(--text);}
-  }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;height:100%;}
   body{background:var(--grey-bg);color:var(--text);font-family:var(--font);display:flex;flex-direction:column;height:100vh;overflow:hidden;}
